@@ -1,73 +1,62 @@
-pub struct Context {}
+#[cfg(target_arch="wasm32")]
+use wasm_bindgen::prelude::*;
 
-pub enum Key {
-    Left,
-    Right,
-    Up,
-    Down,
-    Space
-}
+use winit::{
+    event::*,
+    event_loop::{ControlFlow, EventLoop},
+    window::WindowBuilder,
+};
 
-pub enum Event {
-    KeyDown(Key),
-    Draw
-}
-
-extern "C" {
-    fn js_clear_screen_to_color(red: f32, green: f32, blue: f32, alpha: f32);
-    fn js_draw_rectangle(x: f32, y:f32, width: f32, height: f32, red: f32, green: f32, blue: f32, alpha: f32);
-}
-
-#[no_mangle]
-pub extern "C" fn key_pressed(value: usize) {
-    let key = match value {
-        1 => Key::Left,
-        2 => Key::Right,
-        3 => Key::Up,
-        4 => Key::Down,
-        5 => Key::Space,
-        _ => return,
-    };
-
-    send_event(Event::KeyDown(key));
-}
-
-#[no_mangle]
-pub extern "C" fn animate() {
-    send_event(Event::Draw);
-}
-
-thread_local! {
-    pub static EVENT_HANDLER_AND_CONTEXT: std::cell::RefCell<(Box<dyn FnMut(&mut Context, Event)>, Context)>
-    = std::cell::RefCell::new((Box::new(|_, _|{}), Context {}));
-}
-
-pub fn set_event_handler(function: impl FnMut(&mut Context, Event) + 'static) {
-    EVENT_HANDLER_AND_CONTEXT.with(|event_handler_and_context| {
-        // Note we're storing our `EVENT_HANDLER_AND_CONTEXT`'s internal data as a tuple of two elements.
-        // To access the first item in the tuple we use the `.0` syntax.
-        event_handler_and_context.borrow_mut().0 = Box::new(function);
-    });
-}
-
-fn send_event(event: Event) {
-    EVENT_HANDLER_AND_CONTEXT.with(|event_handler_and_context| {
-        let mut borrow = event_handler_and_context.borrow_mut();
-        let (event_handler, context) = &mut *borrow;
-        (event_handler)(context, event)
-    })
-}
-
-impl Context {
-    pub fn clear_screen_to_color(&mut self, red: f32, green: f32, blue: f32, alpha: f32) {
-        unsafe {
-            js_clear_screen_to_color(red, green, blue, alpha);
+#[cfg_attr(target_arch="wasm32", wasm_bindgen(start))]
+pub async fn run() {
+    cfg_if::cfg_if! {
+        if #[cfg(target_arch = "wasm32")] {
+            std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+            console_log::init_with_level(log::Level::Warn).expect("Could't initialize logger");
+        } else {
+            env_logger::init();
         }
+    }
+
+    let event_loop = EventLoop::new();
+    let window = WindowBuilder::new().build(&event_loop).unwrap();
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        // Winit prevents sizing with CSS, so we have to set
+        // the size manually when on web.
+        use winit::dpi::PhysicalSize;
+        window.set_inner_size(PhysicalSize::new(450, 400));
+        
+        use winit::platform::web::WindowExtWebSys;
+        web_sys::window()
+            .and_then(|win| win.document())
+            .and_then(|doc| {
+                let dst = doc.get_element_by_id("aqua")?;
+                let canvas = web_sys::Element::from(window.canvas());
+                dst.append_child(&canvas).ok()?;
+                Some(())
+            })
+            .expect("Couldn't append canvas to document body.");
     }
     
-    pub fn draw_rectangle(&mut self, x: f32, y: f32, width: f32, height: f32, red: f32, blue: f32, green: f32, alpha: f32) {
-        unsafe {
-            js_draw_rectangle(x, y, width, height, red, green, blue, alpha);
-        }
-    }
+    event_loop.run(move |event, _, control_flow| match event {
+        Event::WindowEvent {
+            ref event,
+            window_id,
+        } if window_id == window.id() => match event {
+            WindowEvent::CloseRequested
+            | WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        state: ElementState::Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Escape),
+                        ..
+                    },
+                ..
+            } => *control_flow = ControlFlow::Exit,
+            _ => {}
+        },
+        _ => {}
+    });
 }
