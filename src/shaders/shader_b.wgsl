@@ -23,5 +23,5 @@ fn vs_main(model: VertexInput) -> VertexOutput {
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
-    return vec4<f32>(in.position, 0.5, 1.0);
+    return vec4<f32>(in.color, 1.0);
 }

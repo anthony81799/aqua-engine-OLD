@@ -17,6 +17,7 @@ env_logger = "0.9.0"
 log = "0.4.17"
 wgpu = "0.12"
 bytemuck = { version = "1.9.1", features = [ "derive" ] }
+anyhow = "1.0.57"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"
@@ -29,3 +30,8 @@ web-sys = { version = "0.3.57", features = [
     "Window",
     "Element",
 ]}
+
+[dependencies.image]
+version = "0.24.2"
+default-features = true
+features = ["png", "jpeg"]
