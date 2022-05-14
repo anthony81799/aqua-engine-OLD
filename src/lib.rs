@@ -8,6 +8,8 @@ use winit::{
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
+mod camera;
+mod camera_controller;
 mod texture;
 
 #[repr(C)]
@@ -70,6 +72,11 @@ struct State {
     use_complex: bool,
     diffuse_bind_groups: [wgpu::BindGroup; 2],
     is_space_pressed: bool,
+    camera_uniform: camera::CameraUniform,
+    camera_buffer: wgpu::Buffer,
+    camera_bind_group: wgpu::BindGroup,
+    camera_staging: camera::CameraStaging,
+    camera_controller: camera_controller::CameraController,
     #[allow(dead_code)]
     diffuse_textures: [texture::Texture; 2],
 }
@@ -191,6 +198,44 @@ impl State {
             }),
         ];
 
+        let camera = camera::Camera::new(&config);
+
+        let mut camera_uniform = camera::CameraUniform::new();
+        let camera_staging = camera::CameraStaging::new(camera);
+        camera_staging.update_camera(&mut camera_uniform);
+
+        let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Camera Buffer"),
+            contents: bytemuck::cast_slice(&[camera_uniform]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let camera_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+                label: Some("camera_bind_group_layout"),
+            });
+
+        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &camera_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: camera_buffer.as_entire_binding(),
+            }],
+            label: Some("camera_bind_group"),
+        });
+
+        let camera_controller = camera_controller::CameraController::new(0.2);
+
         let clear_color = wgpu::Color::BLACK;
 
         let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
@@ -201,7 +246,7 @@ impl State {
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&texture_bind_group_layout],
+                bind_group_layouts: &[&texture_bind_group_layout, &camera_bind_group_layout],
                 push_constant_ranges: &[],
             });
 
@@ -349,6 +394,11 @@ impl State {
             diffuse_bind_groups,
             diffuse_textures,
             is_space_pressed: false,
+            camera_uniform,
+            camera_buffer,
+            camera_bind_group,
+            camera_staging,
+            camera_controller,
         }
     }
 
@@ -362,6 +412,7 @@ impl State {
     }
 
     fn input(&mut self, event: &WindowEvent) -> bool {
+        self.camera_controller.process_events(event);
         match event {
             WindowEvent::CursorMoved { position, .. } => {
                 self.clear_color = wgpu::Color {
@@ -391,7 +442,15 @@ impl State {
     }
 
     fn update(&mut self) {
-        // remove `todo!()`
+        self.camera_controller
+            .update_camera(&mut self.camera_staging.camera);
+        self.camera_staging.model_rotation += cgmath::Deg(2.0);
+        self.camera_staging.update_camera(&mut self.camera_uniform);
+        self.queue.write_buffer(
+            &self.camera_buffer,
+            0,
+            bytemuck::cast_slice(&[self.camera_uniform]),
+        );
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -431,6 +490,7 @@ impl State {
         };
 
         render_pass.set_bind_group(0, bind_group, &[]);
+        render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
         let data = if self.use_complex {
             (
                 &self.vertex_buffers[1],
