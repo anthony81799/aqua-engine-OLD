@@ -49,24 +49,25 @@ impl CameraStaging {
     }
 
     pub fn update_camera(&self, camera_uniform: &mut CameraUniform) {
-        camera_uniform.model_view_proj = (OPENGL_TO_WGPU_MATRIX
-            * self.camera.build_view_projection_matrix()
-            * cgmath::Matrix4::from_angle_z(self.model_rotation))
-        .into();
+        camera_uniform.update_view_proj(&self.camera)
     }
 }
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CameraUniform {
-    model_view_proj: [[f32; 4]; 4],
+    view_proj: [[f32; 4]; 4],
 }
 
 impl CameraUniform {
     pub fn new() -> Self {
         use cgmath::SquareMatrix;
         Self {
-            model_view_proj: cgmath::Matrix4::identity().into(),
+            view_proj: cgmath::Matrix4::identity().into(),
         }
+    }
+
+    pub fn update_view_proj(&mut self, camera: &Camera) {
+        self.view_proj = (OPENGL_TO_WGPU_MATRIX * camera.build_view_projection_matrix()).into();
     }
 }
