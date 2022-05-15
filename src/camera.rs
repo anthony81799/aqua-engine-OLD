@@ -18,7 +18,7 @@ pub struct Camera {
 impl Camera {
     pub fn new(config: &wgpu::SurfaceConfiguration) -> Self {
         return Self {
-            eye: (0.0, 1.0, 2.0).into(),
+            eye: (0.0, 5.0, -10.0).into(),
             target: (0.0, 0.0, 0.0).into(),
             up: cgmath::Vector3::unit_y(),
             aspect: config.width as f32 / config.height as f32,
@@ -35,19 +35,21 @@ impl Camera {
     }
 }
 
+#[allow(dead_code)]
 pub struct CameraStaging {
     pub camera: Camera,
     pub model_rotation: cgmath::Deg<f32>,
 }
 
 impl CameraStaging {
+    #[allow(dead_code)]
     pub fn new(camera: Camera) -> Self {
         Self {
             camera,
             model_rotation: cgmath::Deg(0.0),
         }
     }
-
+    #[allow(dead_code)]
     pub fn update_camera(&self, camera_uniform: &mut CameraUniform) {
         camera_uniform.update_view_proj(&self.camera)
     }
