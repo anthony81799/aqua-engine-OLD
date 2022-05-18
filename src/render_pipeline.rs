@@ -62,17 +62,17 @@ impl RenderPipeline {
             multiview: None,
         });
 
-        return RenderPipeline { render_pipeline };
+        RenderPipeline { render_pipeline }
     }
 
     pub fn create_pipeline_layout(
         device: &wgpu::Device,
         bind_group_layouts: &[&wgpu::BindGroupLayout],
     ) -> wgpu::PipelineLayout {
-        return device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: bind_group_layouts,
+            bind_group_layouts,
             push_constant_ranges: &[],
-        });
+        })
     }
 }

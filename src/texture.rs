@@ -134,7 +134,7 @@ impl Texture {
     }
 
     pub fn create_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
-        return device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
@@ -170,6 +170,6 @@ impl Texture {
                 },
             ],
             label: Some("texture_bind_group_layout"),
-        });
+        })
     }
 }

@@ -1,4 +1,3 @@
-#[allow(dead_code)]
 use cgmath::*;
 use std::f32::consts::FRAC_PI_2;
 use std::time::Duration;
@@ -51,15 +50,15 @@ impl Camera {
         device: &wgpu::Device,
         camera_uniform: CameraUniform,
     ) -> wgpu::Buffer {
-        return device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Camera Buffer"),
             contents: bytemuck::cast_slice(&[camera_uniform]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
+        })
     }
 
     pub fn camera_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
-        return device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
@@ -71,7 +70,7 @@ impl Camera {
                 count: None,
             }],
             label: Some("camera_bind_group_layout"),
-        });
+        })
     }
 
     pub fn create_bind_group(
@@ -79,14 +78,14 @@ impl Camera {
         camera_bind_group_layout: &wgpu::BindGroupLayout,
         camera_buffer: &wgpu::Buffer,
     ) -> wgpu::BindGroup {
-        return device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &camera_bind_group_layout,
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: camera_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: camera_buffer.as_entire_binding(),
             }],
             label: Some("camera_bind_group"),
-        });
+        })
     }
 }
 

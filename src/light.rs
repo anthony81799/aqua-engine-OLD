@@ -13,25 +13,25 @@ pub struct LightUniform {
 
 impl LightUniform {
     pub fn new() -> Self {
-        return LightUniform {
+        LightUniform {
             position: [2.0, 2.0, 2.0],
             _padding: 0,
             color: [1.0, 1.0, 1.0],
             _padding2: 0,
-        };
+        }
     }
 }
 
 pub fn create_buffer_init(device: &wgpu::Device, light_uniform: LightUniform) -> wgpu::Buffer {
-    return device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Light VB"),
         contents: bytemuck::cast_slice(&[light_uniform]),
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-    });
+    })
 }
 
 pub fn create_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
-    return device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         entries: &[wgpu::BindGroupLayoutEntry {
             binding: 0,
             visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
@@ -43,7 +43,7 @@ pub fn create_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout 
             count: None,
         }],
         label: None,
-    });
+    })
 }
 
 pub fn create_bind_group(
@@ -51,12 +51,12 @@ pub fn create_bind_group(
     light_bind_group_layout: &wgpu::BindGroupLayout,
     light_buffer: &wgpu::Buffer,
 ) -> wgpu::BindGroup {
-    return device.create_bind_group(&wgpu::BindGroupDescriptor {
+    device.create_bind_group(&wgpu::BindGroupDescriptor {
         layout: light_bind_group_layout,
         entries: &[wgpu::BindGroupEntry {
             binding: 0,
             resource: light_buffer.as_entire_binding(),
         }],
         label: None,
-    });
+    })
 }

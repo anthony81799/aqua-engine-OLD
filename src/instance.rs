@@ -22,7 +22,7 @@ impl Instance {
     }
 
     pub fn instance_vec(instances_per_row: u32, space_between: f32) -> Vec<Instance> {
-        return (0..instances_per_row)
+        (0..instances_per_row)
             .flat_map(|z| {
                 (0..instances_per_row).map(move |x| {
                     let x = space_between * (x as f32 - instances_per_row as f32 / 2.0);
@@ -31,7 +31,7 @@ impl Instance {
                     Instance::new(x, z)
                 })
             })
-            .collect::<Vec<_>>();
+            .collect::<Vec<_>>()
     }
 
     pub fn to_raw(&self) -> InstanceRaw {
@@ -87,7 +87,6 @@ impl model::Vertex for InstanceRaw {
                     shader_location: 8,
                     format: wgpu::VertexFormat::Float32x4,
                 },
-                // NEW!
                 wgpu::VertexAttribute {
                     offset: mem::size_of::<[f32; 16]>() as wgpu::BufferAddress,
                     shader_location: 9,
@@ -109,9 +108,9 @@ impl model::Vertex for InstanceRaw {
 }
 
 pub fn create_buffer_init(device: &wgpu::Device, instance_data: Vec<InstanceRaw>) -> wgpu::Buffer {
-    return device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Instance Buffer"),
         contents: bytemuck::cast_slice(&instance_data),
         usage: wgpu::BufferUsages::VERTEX,
-    });
+    })
 }
