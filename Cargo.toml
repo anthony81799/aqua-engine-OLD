@@ -29,6 +29,5 @@ default-features = true
 features = ["png", "jpeg"]
 
 [build-dependencies]
-anyhow = "1.0.57"
 fs_extra = "1.2.0"
 glob = "0.3.0"
